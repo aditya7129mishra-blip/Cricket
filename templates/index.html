@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#07111f">
+<title>BDPL Tournament</title>
+<style>
+:root{--gold:#ffd34e;--gold2:#eab62b;--dark:#030914;--card:#101e31;--border:#34455b;--green:#20c77a;--red:#ef5350;--muted:#94a3b8}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#07111f;color:#fff}
+header{padding:25px;background:linear-gradient(135deg,#111827,#172554,#111827)}
+.container{max-width:1150px;margin:auto;padding:16px}
+h1{margin:0;font-size:30px}h2{margin-top:0}.muted{color:var(--muted)}
+.organizer{margin-top:10px;color:#fbbf24;font-weight:bold}
+.tabs{display:flex;gap:8px;overflow:auto;margin:15px 0}
+.tabs button{white-space:nowrap;padding:12px 16px;border-radius:8px;border:1px solid #334155;background:#111827;color:white;cursor:pointer}
+.tabs button.active{background:#f59e0b;color:#111827;font-weight:bold}
+.view{display:none}.view.active{display:block}
+.panel{background:#0f172a;border:1px solid #334155;border-radius:8px;padding:18px;margin-bottom:15px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+input,select{width:100%;padding:12px;border-radius:8px;border:1px solid #334155;background:#020617;color:white;font-size:16px}
+input:focus,select:focus{outline:2px solid var(--gold);outline-offset:1px}
+button{cursor:pointer}.primary,.secondary,.danger{border:0;padding:11px 16px;border-radius:8px;font-weight:bold;margin-top:10px}
+.primary{background:#f59e0b;color:#111827}.primary:hover{background:#ffd34e}
+.secondary{background:#334155;color:white}.danger{background:#7f1d1d;color:white}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.card{background:#111827;border:1px solid #334155;border-radius:8px;padding:15px}
+.card b{display:block;font-size:24px;margin-top:5px}
+.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:540px}
+th,td{padding:10px;border-bottom:1px solid #334155;text-align:left}th{color:var(--gold);font-size:13px}
+.score{font-size:55px;font-weight:bold;text-align:center}.overs{text-align:center;color:var(--muted)}
+.ballrow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:15px;min-height:43px}
+.ball{width:43px;height:43px;flex:0 0 43px;border-radius:50%;background:#1e293b;display:grid;place-items:center;font-size:13px}
+.score-buttons{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}.score-buttons button{margin-top:0}
+.status{min-height:22px;color:var(--green)}.status.error{color:#ff8a80}
+footer{text-align:center;color:#64748b;padding:30px}
+@media(max-width:650px){.grid{grid-template-columns:1fr}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}h1{font-size:24px}.container{padding:12px}}
+</style>
+</head>
+<body>
+<header><div class="container">
+  <h1>BDPL — Bengal District Premier League</h1>
+  <p class="muted">Tournament Management · Live Scoring · Teams · Schedule · Awards</p>
+  <div class="organizer">ORGANISED BY: Nilanjan Panja &amp; Shivam Bhajoriya</div>
+  <div class="muted">DEVELOPER: Aditya Mishra</div>
+</div></header>
+
+<main class="container">
+<nav class="tabs" aria-label="Tournament sections">
+  <button class="active" data-page="dashboard">Dashboard</button>
+  <button data-page="setup">Tournament Setup</button>
+  <button data-page="teams">Teams &amp; Players</button>
+  <button data-page="schedule">Match Schedule</button>
+  <button data-page="live">Live Scoring</button>
+  <button data-page="awards">Awards</button>
+</nav>
+<p id="message" class="status" role="status" aria-live="polite"></p>
+
+<section id="dashboard" class="view active">
+  <div class="cards">
+    <div class="card">Teams<b id="statTeams">0</b></div>
+    <div class="card">Players<b id="statPlayers">0</b></div>
+    <div class="card">Matches<b id="statMatches">0</b></div>
+    <div class="card">Prize Pool<b id="statPrize">₹0</b></div>
+  </div>
+  <div class="panel">
+    <h2 id="dashName">BDPL</h2>
+    <p id="dashInfo" class="muted"></p>
+    <div class="organizer">Nilanjan Panja &amp; Shivam Bhajoriya</div>
+    <p class="muted">Developer: Aditya Mishra</p>
+  </div>
+</section>
+
+<section id="setup" class="view">
+  <div class="panel"><h2>Tournament Setup</h2>
+    <div class="grid">
+      <div><label for="name">Tournament Name</label><input id="name" required></div>
+      <div><label for="venue">Venue</label><input id="venue"></div>
+      <div><label for="auction_date">Auction Date</label><input id="auction_date" type="date"></div>
+      <div><label for="start_date">Start Date</label><input id="start_date" type="date"></div>
+      <div><label for="end_date">End Date</label><input id="end_date" type="date"></div>
+      <div><label for="prize_pool">Prize Pool ₹</label><input id="prize_pool" type="number" min="0"></div>
+    </div>
+    <button class="primary" id="saveSetup">Save Tournament</button>
+  </div>
+</section>
+
+<section id="teams" class="view">
+  <div class="panel"><h2>Add Team</h2>
+    <div class="grid">
+      <div><label for="teamName">Team Name</label><input id="teamName" placeholder="Durgapur Warriors"></div>
+      <div><label for="district">District</label><input id="district" placeholder="Paschim Bardhaman"></div>
+    </div>
+    <button class="primary" id="addTeam">Add Team</button>
+  </div>
+  <div class="panel"><h2>Teams &amp; Players</h2><div class="table-wrap" id="teamTable"></div></div>
+</section>
+
+<section id="schedule" class="view">
+  <div class="panel"><h2>Match Schedule</h2>
+    <div class="grid">
+      <div><label for="matchDate">Date</label><input id="matchDate" type="date" required></div>
+      <div><label for="matchTime">Time</label><input id="matchTime" type="time" required></div>
+      <div><label for="teamA">Team A</label><select id="teamA"></select></div>
+      <div><label for="teamB">Team B</label><select id="teamB"></select></div>
+      <div><label for="matchVenue">Venue</label><input id="matchVenue" placeholder="ASP Stadium"></div>
+    </div>
+    <button class="primary" id="addMatch">Add Match</button>
+  </div>
+  <div class="panel"><h2>Scheduled Matches</h2><div class="table-wrap" id="matchTable"></div></div>
+</section>
+
+<section id="live" class="view">
+  <div class="panel"><h2>Live Match Setup</h2>
+    <div class="grid">
+      <div><label for="battingTeam">Batting Team</label><select id="battingTeam"></select></div>
+      <div><label for="bowlingTeam">Bowling Team</label><select id="bowlingTeam"></select></div>
+      <div><label for="striker">Striker</label><input id="striker"></div>
+      <div><label for="nonStriker">Non-Striker</label><input id="nonStriker"></div>
+      <div><label for="bowler">Bowler</label><input id="bowler"></div>
+    </div>
+    <button class="primary" id="startLive">Start Live Match</button>
+  </div>
+  <div class="panel">
+    <div class="score"><span id="liveRuns">0</span>/<span id="liveWickets">0</span></div>
+    <div class="overs">Overs: <span id="liveOvers">0.0</span></div>
+    <div class="ballrow" id="ballRow" aria-label="Recent ball events"></div>
+    <div class="score-buttons">
+      <button class="primary ballBtn" data-event="0">DOT</button>
+      <button class="primary ballBtn" data-event="1">1</button>
+      <button class="primary ballBtn" data-event="2">2</button>
+      <button class="primary ballBtn" data-event="3">3</button>
+      <button class="primary ballBtn" data-event="4">FOUR</button>
+      <button class="primary ballBtn" data-event="6">SIX</button>
+      <button class="primary ballBtn" data-event="wd">WIDE</button>
+      <button class="primary ballBtn" data-event="nb">NO BALL</button>
+      <button class="danger ballBtn" data-event="w">WICKET</button>
+      <button class="secondary" id="resetLive">RESET</button>
+    </div>
+  </div>
+</section>
+
+<section id="awards" class="view">
+  <div class="panel"><h2>Tournament Awards</h2>
+    <div class="grid">
+      <div><label for="mom">Man of the Match</label><input id="mom"></div>
+      <div><label for="bestBatsman">Best Batsman</label><input id="bestBatsman"></div>
+      <div><label for="bestBowler">Best Bowler</label><input id="bestBowler"></div>
+      <div><label for="bestFielder">Best Fielder</label><input id="bestFielder"></div>
+      <div><label for="manSeries">Man of the Series</label><input id="manSeries"></div>
+      <div><label for="champion">Champion</label><input id="champion"></div>
+    </div>
+    <button class="primary" id="saveAwards">Save Awards</button>
+  </div>
+  <div class="panel"><h2>Current Awards</h2><div class="table-wrap" id="awardTable"></div></div>
+</section>
+</main>
+
+<footer>BDPL Tournament Management System<br>Organised by Nilanjan Panja &amp; Shivam Bhajoriya<br>Developer: Aditya Mishra</footer>
+
+<script>
+let data = null;
+const $ = (id) => document.getElementById(id);
+const draftFields = new Set();
+const setupFields = ["name", "venue", "auction_date", "start_date", "end_date", "prize_pool"];
+const awardFields = ["mom", "bestBatsman", "bestBowler", "bestFielder", "manSeries", "champion"];
+
+[...setupFields, ...awardFields].forEach((id) => {
+  $(id).addEventListener("input", () => draftFields.add(id));
+});
+
+function syncField(id, value) {
+  if (!draftFields.has(id)) $(id).value = value;
+}
+
+function money(number) {
+  return "₹" + Number(number || 0).toLocaleString("en-IN");
+}
+
+async function api(url, options = {}) {
+  const response = await fetch(url, {
+    headers: { "Content-Type": "application/json" },
+    ...options
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.detail || "Request failed.");
+  return result;
+}
+
+function escapeHtml(text) {
+  return String(text || "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  })[char]);
+}
+
+function setMessage(text, isError = false) {
+  $("message").textContent = text;
+  $("message").classList.toggle("error", isError);
+}
+
+async function loadData() {
+  try {
+    data = await api("/api/all");
+    render();
+    setMessage("");
+  } catch (error) {
+    setMessage(error.message, true);
+  }
+}
+
+function render() {
+  const tournament = data.tournament;
+  syncField("name", tournament.name || "");
+  syncField("venue", tournament.venue || "");
+  syncField("auction_date", tournament.auction_date || "");
+  syncField("start_date", tournament.start_date || "");
+  syncField("end_date", tournament.end_date || "");
+  syncField("prize_pool", tournament.prize_pool || 0);
+  $("dashName").textContent = tournament.name;
+  $("dashInfo").textContent = `Venue: ${tournament.venue || "—"} | Tournament: ${tournament.start_date || "—"} to ${tournament.end_date || "—"} | Prize Pool: ${money(tournament.prize_pool)}`;
+  $("statTeams").textContent = data.teams.length;
+  $("statPlayers").textContent = data.teams.reduce((total, team) => total + team.players.length, 0);
+  $("statMatches").textContent = data.matches.length;
+  $("statPrize").textContent = money(tournament.prize_pool);
+
+  const options = '<option value="">Select team</option>' + data.teams.map((team) =>
+    `<option value="${escapeHtml(team.name)}">${escapeHtml(team.name)}</option>`
+  ).join("");
+  ["teamA", "teamB", "battingTeam", "bowlingTeam"].forEach((id) => {
+    const previous = $(id).value;
+    $(id).innerHTML = options;
+    if (data.teams.some((team) => team.name === previous)) $(id).value = previous;
+  });
+
+  renderTeams();
+  renderMatches();
+  renderLive();
+  renderAwards();
+}
+
+function renderTeams() {
+  if (!data.teams.length) {
+    $("teamTable").textContent = "No teams added.";
+    return;
+  }
+  $("teamTable").innerHTML = `<table><thead><tr><th>Team</th><th>District</th><th>Players</th><th>Action</th></tr></thead><tbody>${data.teams.map((team) => `
+    <tr><td>${escapeHtml(team.name)}</td><td>${escapeHtml(team.district || "—")}</td>
+    <td>${team.players.map((player) => escapeHtml(player.name)).join(", ") || "—"}</td>
+    <td><button class="secondary" onclick="addPlayer(${team.id})">+ Player</button>
+    <button class="danger" onclick="deleteTeam(${team.id})">Delete</button></td></tr>`).join("")}</tbody></table>`;
+}
+
+function renderMatches() {
+  if (!data.matches.length) {
+    $("matchTable").textContent = "No matches scheduled.";
+    return;
+  }
+  $("matchTable").innerHTML = `<table><thead><tr><th>Date</th><th>Time</th><th>Match</th><th>Venue</th><th>Status</th></tr></thead><tbody>${data.matches.map((match) => `
+    <tr><td>${escapeHtml(match.match_date)}</td><td>${escapeHtml(match.match_time)}</td>
+    <td>${escapeHtml(match.team_a)} vs ${escapeHtml(match.team_b)}</td>
+    <td>${escapeHtml(match.venue)}</td><td>${escapeHtml(match.status)}</td></tr>`).join("")}</tbody></table>`;
+}
+
+function renderLive() {
+  const live = data.live;
+  $("liveRuns").textContent = live.runs;
+  $("liveWickets").textContent = live.wickets;
+  $("liveOvers").textContent = `${Math.floor(live.balls / 6)}.${live.balls % 6}`;
+}
+
+function renderAwards() {
+  const awards = data.awards;
+  const fields = [
+    ["mom", "man_of_match"], ["bestBatsman", "best_batsman"],
+    ["bestBowler", "best_bowler"], ["bestFielder", "best_fielder"],
+    ["manSeries", "man_of_series"], ["champion", "champion"]
+  ];
+  fields.forEach(([input, key]) => syncField(input, awards[key] || ""));
+  const rows = fields.map(([input, key]) =>
+    `<tr><td>${$(input).previousElementSibling.textContent}</td><td>${escapeHtml(awards[key] || "—")}</td></tr>`
+  ).join("");
+  $("awardTable").innerHTML = `<table><thead><tr><th>Award</th><th>Player / Team</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+document.querySelectorAll(".tabs button").forEach((button) => {
+  button.addEventListener("click", () => {
+    document.querySelectorAll(".tabs button").forEach((tab) => tab.classList.toggle("active", tab === button));
+    document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === button.dataset.page));
+  });
+});
+
+$("saveSetup").addEventListener("click", async () => {
+  try {
+    await api("/api/setup", { method: "POST", body: JSON.stringify({
+      name: $("name").value, venue: $("venue").value,
+      auction_date: $("auction_date").value, start_date: $("start_date").value,
+      end_date: $("end_date").value, prize_pool: Number($("prize_pool").value) || 0
+    }) });
+    setupFields.forEach((id) => draftFields.delete(id));
+    await loadData();
+    setMessage("Tournament settings saved.");
+  } catch (error) { setMessage(error.message, true); }
+});
+
+$("addTeam").addEventListener("click", async () => {
+  const name = $("teamName").value.trim();
+  if (!name) return setMessage("Enter a team name.", true);
+  try {
+    const result = await api("/api/teams", { method: "POST", body: JSON.stringify({ name, district: $("district").value.trim() }) });
+    if (!result.ok) return setMessage(result.error, true);
+    $("teamName").value = "";
+    $("district").value = "";
+    await loadData();
+    setMessage("Team added.");
+  } catch (error) { setMessage(error.message, true); }
+});
+
+window.addPlayer = async (teamId) => {
+  const name = prompt("Enter player name:");
+  if (!name || !name.trim()) return;
+  try {
+    await api(`/api/teams/${teamId}/players`, { method: "POST", body: JSON.stringify({ name: name.trim() }) });
+    await loadData();
+    setMessage("Player added.");
+  } catch (error) { setMessage(error.message, true); }
+};
+
+window.deleteTeam = async (teamId) => {
+  if (!confirm("Delete this team and its players?")) return;
+  try {
+    await api(`/api/teams/${teamId}`, { method: "DELETE" });
+    await loadData();
+    setMessage("Team deleted.");
+  } catch (error) { setMessage(error.message, true); }
+};
+
+$("addMatch").addEventListener("click", async () => {
+  const teamA = $("teamA").value;
+  const teamB = $("teamB").value;
+  if (!teamA || !teamB || teamA === teamB) return setMessage("Choose two different teams.", true);
+  if (!$("matchDate").value || !$("matchTime").value) return setMessage("Choose a date and time.", true);
+  try {
+    await api("/api/matches", { method: "POST", body: JSON.stringify({
+      match_date: $("matchDate").value, match_time: $("matchTime").value,
+      team_a: teamA, team_b: teamB, venue: $("matchVenue").value || "TBD"
+    }) });
+    await loadData();
+    setMessage("Match scheduled.");
+  } catch (error) { setMessage(error.message, true); }
+});
+
+$("startLive").addEventListener("click", async () => {
+  const batting = $("battingTeam").value;
+  const bowling = $("bowlingTeam").value;
+  if (!batting || !bowling || batting === bowling) return setMessage("Choose different batting and bowling teams.", true);
+  try {
+    await api("/api/live/setup", { method: "POST", body: JSON.stringify({
+      batting_team: batting, bowling_team: bowling, striker: $("striker").value,
+      non_striker: $("nonStriker").value, bowler: $("bowler").value
+    }) });
+    await loadData();
+    $("ballRow").replaceChildren();
+    setMessage("Live match started.");
+  } catch (error) { setMessage(error.message, true); }
+});
+
+document.querySelectorAll(".ballBtn").forEach((button) => {
+  button.addEventListener("click", async () => {
+    try {
+      await api("/api/live/ball", { method: "POST", body: JSON.stringify({ event: button.dataset.event }) });
+      await loadData();
+      const ball = document.createElement("div");
+      ball.className = "ball";
+      ball.textContent = button.dataset.event.toUpperCase();
+      $("ballRow").append(ball);
+    } catch (error) { setMessage(error.message, true); }
+  });
+});
+
+$("resetLive").addEventListener("click", async () => {
+  try {
+    await api("/api/live/reset", { method: "POST" });
+    $("ballRow").replaceChildren();
+    await loadData();
+    setMessage("Live score reset.");
+  } catch (error) { setMessage(error.message, true); }
+});
+
+$("saveAwards").addEventListener("click", async () => {
+  try {
+    await api("/api/awards", { method: "POST", body: JSON.stringify({
+      man_of_match: $("mom").value, best_batsman: $("bestBatsman").value,
+      best_bowler: $("bestBowler").value, best_fielder: $("bestFielder").value,
+      man_of_series: $("manSeries").value, champion: $("champion").value
+    }) });
+    awardFields.forEach((id) => draftFields.delete(id));
+    await loadData();
+    setMessage("Awards saved.");
+  } catch (error) { setMessage(error.message, true); }
+});
+
+loadData();
+setInterval(loadData, 5000);
+</script>
+</body>
+</html>
